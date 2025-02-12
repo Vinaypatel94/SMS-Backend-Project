@@ -12,7 +12,7 @@ class User(Base):
     phone_no = Column(Integer, unique=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String,index=True)
-    role = Column(String, index=True)
+    role = Column(String, index=True, default="staff") #default role
     
 
 # class Role(Base):
