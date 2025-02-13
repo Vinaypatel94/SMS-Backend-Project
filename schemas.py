@@ -10,7 +10,7 @@ class UserCreate(BaseModel):
     password: str
     role: Optional[str] = "staff"
     
-
+    
 class UserResponse(BaseModel):
     id: int
     name: str
@@ -29,3 +29,5 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+# Attendance schemas

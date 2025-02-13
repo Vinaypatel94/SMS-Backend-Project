@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relationship
-from datetime import datetime 
+# from datetime import datetime 
 from database import Base
 
 
@@ -8,8 +8,8 @@ from database import Base
 role_permission_association = Table(
     "role_permissions",
     Base.metadata,
-    Column("role_id", Integer, ForeignKey("roles.role_id"), primary_key=True),
-    Column("permission_id", Integer, ForeignKey("permissions.permission_id"), primary_key=True),
+    Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
+    Column("permission_id", Integer, ForeignKey("permissions.id"), primary_key=True),
 )
 
 # Many-to-Many between Users and Roles
@@ -17,7 +17,7 @@ user_role_association = Table(
     "user_roles",
     Base.metadata,
     Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
-    Column("role_id", Integer, ForeignKey("roles.role_id"), primary_key=True),
+    Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
 )
 class User(Base):
 
@@ -30,7 +30,7 @@ class User(Base):
     phone_no = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String, index=True)
-    role = Column(String, index=True, default="staff")  # default role
+    # role = Column(String, index=True, default="staff")  # default role
     
     roles = relationship("Role", secondary=user_role_association, back_populates="users")
 
@@ -38,8 +38,8 @@ class Role(Base):
 
     __tablename__ = "roles"
 
-    role_id = Column(Integer, primary_key=True, index=True)
-    role_name = Column(String, unique=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
 
     users = relationship("User", secondary=user_role_association, back_populates="roles")
     permissions = relationship("Permission", secondary=role_permission_association, back_populates="roles")
@@ -49,16 +49,10 @@ class Permission(Base):
 
     __tablename__ = "permission"
 
-    permission_id = Column(Integer, primary_key=True, index=True)
-    permission_name = Column(String, unique=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
 
     roles = relationship("Role", secondary=role_permission_association, back_populates="permissions")
-
-
-
-
-
-
 
 
 
@@ -84,5 +78,3 @@ class Permission(Base):
 #     leave_type = Column(String)
 #     status = Column(String)
 #     applied_at = Column(DateTime, default=datetime.utcnow)
-
-
