@@ -4,6 +4,7 @@ from database import get_db
 from models import User
 from auth import authenticator
 
+
 def protected_user(authorization: str = Header(...), db: Session = Depends(get_db)) -> User:
     scheme, token = authorization.split()
     if scheme.lower() != "bearer":
@@ -22,10 +23,20 @@ def protected_user(authorization: str = Header(...), db: Session = Depends(get_d
         )
     return user
 
+
 def admin_required(current_user: User = Depends(protected_user)):
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins can perform this action"
+        )
+    return current_user
+
+
+def admin_or_manager_required(current_user: User = Depends(protected_user)):
+    if current_user.role not in ["admin", "manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins and managers can access this resource"
         )
     return current_user
