@@ -37,7 +37,7 @@ def upgrade() -> None:
                      )
 
     # create permissions table
-    op.create_table('permission',
+    op.create_table('permissions',
                     sa.Column('id', sa.Integer, primary_key=True, index=True),
                     sa.Column('name', sa.String(length=200), unique=True, index=True)
                     )
@@ -51,15 +51,14 @@ def upgrade() -> None:
     # create role_permission association table
     op.create_table( 'role_permissions',
                     sa.Column('role_id', sa.Integer, sa.ForeignKey('roles.id'), primary_key=True),
-                    sa.Column('permission_id', sa.Integer, sa.ForeignKey('permission.id'), primary_key=True)
+                    sa.Column('permission_id', sa.Integer, sa.ForeignKey('permissions.id'), primary_key=True)
                    )
 
     
 def downgrade() -> None:
     op.drop_table('users')
     op.drop_table('roles')
-    op.drop_table('permission')
+    op.drop_table('permissions')
     op.drop_table('user_roles')
     op.drop_table('role_permissions')
      
-    
