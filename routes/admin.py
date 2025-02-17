@@ -7,7 +7,7 @@ from dependencies import admin_required, admin_or_manager_required
 from typing import List
 from auth import authenticator
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["admin"]) 
 
 
 @router.post("/register")
@@ -52,7 +52,14 @@ def get_users(db: Session = Depends(get_db), current_user: User = Depends(admin_
             "email": user.email,
             "phone_no": user.phone_no,
             "age": user.age,
-            "roles": [{"id": role.id, "name": role.name} for role in user.roles]
+            "roles": [
+                {
+                    "id": role.id,
+                    "name": role.name,
+                    "permissions": [{"id": perm.id, "name": perm.name} for perm in role.permissions]
+                }
+                for role in user.roles
+            ]
         }
         for user in users
     ]
@@ -60,7 +67,7 @@ def get_users(db: Session = Depends(get_db), current_user: User = Depends(admin_
 
 
 # update user information only admin
-@router.put("/users/{username}", response_model=UserResponse, dependencies=[Depends(admin_required)])
+@router.put("/users/{username}", response_model=UserResponse, dependencies=[Depends(admin_or_manager_required)])
 def update_user(username: str, user_update: UserCreate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
     if not user:
