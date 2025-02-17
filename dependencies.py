@@ -35,9 +35,9 @@ def admin_required(current_user: User = Depends(protected_user)):
 
 def admin_or_manager_required(current_user: User = Depends(protected_user)):
     role_names = [role.name for role in current_user.roles]
-    if not any(role in ["admin", "manager"] for role in role_names):
+    if not any(role in ["admin", "manager", "hr"] for role in role_names):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins and managers can access this resource"
+            detail="Only admins and managers or hr can access this resource"
         )
     return current_user 
