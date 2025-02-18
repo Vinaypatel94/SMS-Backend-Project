@@ -9,26 +9,6 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/register")
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == user.username).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    
-    hashed_password = authenticator.hash_password(user.password)
-    new_user = User(
-        name=user.name,
-        age=user.age,
-        phone_no=user.phone_no,
-        email=user.email,
-        username=user.username,
-        hashed_password=hashed_password,
-        role=user.role
-    )
-    db.add(new_user)
-    db.commit()
-    return {"message": "User registered successfully"}
-
 @router.post("/login", response_model=Token)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.username == user.username).first()

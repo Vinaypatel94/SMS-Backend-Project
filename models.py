@@ -47,13 +47,12 @@ class Role(Base):
 
 class Permission(Base):
 
-    __tablename__ = "permission"
+    __tablename__ = "permissions"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
 
     roles = relationship("Role", secondary=role_permission_association, back_populates="permissions")
-
 
 
 # # SMS Attendance models
