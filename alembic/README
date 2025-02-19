@@ -1,1 +1,8 @@
-Generic single-database configuration.
+Generic single-database configuration
+Initialize Alembic -> alembic init migrations
+Generate a New Migration -> alembic revision -m "Describe migration change here"
+Apply Migrations (Upgrade the Database) -> alembic upgrade head
+View Current Database Version-> alembic current
+viev migration history -> alembic history
+Show Pending Migrations -> alembic heads
+Reset Database Migrations (Use with Caution!) ->alembic downgrade base , alembic upgrade head
