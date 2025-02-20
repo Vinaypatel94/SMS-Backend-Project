@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from database import Base, engine
-from routes import users, admin
+from routes import users, admin, attendance
 
 app = FastAPI()
 
@@ -10,3 +10,4 @@ Base.metadata.create_all(bind=engine)
 # Include routers
 app.include_router(users.router)
 app.include_router(admin.router)
+app.include_router(attendance.router)
