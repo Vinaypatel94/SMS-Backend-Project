@@ -1,6 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Date, Time, DECIMAL
 from sqlalchemy.orm import relationship
-# from datetime import datetime 
 from database import Base
 
 
@@ -9,7 +8,8 @@ role_permission_association = Table(
     "role_permissions",
     Base.metadata,
     Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
-    Column("permission_id", Integer, ForeignKey("permissions.id"), primary_key=True),
+    Column("permission_id", Integer, ForeignKey(
+        "permissions.id"), primary_key=True),
 )
 
 # Many-to-Many between Users and Roles
@@ -19,6 +19,8 @@ user_role_association = Table(
     Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
     Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
 )
+
+
 class User(Base):
 
     __tablename__ = "users"
@@ -30,9 +32,15 @@ class User(Base):
     phone_no = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String, index=True)
-    # role = Column(String, index=True, default="staff")  # default role
-    
-    roles = relationship("Role", secondary=user_role_association, back_populates="users")
+
+    roles = relationship(
+        "Role", secondary=user_role_association, back_populates="users")
+
+    attendances = relationship(
+        "Attendance", back_populates="user", cascade="all, delete")
+    leave_records = relationship(
+        "LeaveRecord", back_populates="user", cascade="all, delete")
+
 
 class Role(Base):
 
@@ -41,8 +49,10 @@ class Role(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
 
-    users = relationship("User", secondary=user_role_association, back_populates="roles")
-    permissions = relationship("Permission", secondary=role_permission_association, back_populates="roles")
+    users = relationship(
+        "User", secondary=user_role_association, back_populates="roles")
+    permissions = relationship(
+        "Permission", secondary=role_permission_association, back_populates="roles")
 
 
 class Permission(Base):
@@ -52,28 +62,36 @@ class Permission(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
 
-    roles = relationship("Role", secondary=role_permission_association, back_populates="permissions")
+    roles = relationship(
+        "Role", secondary=role_permission_association, back_populates="permissions")
 
 
-# # SMS Attendance models
-# class AttendanceRecord(Base):
-#     __tablename__ = "attendance_records"
-#     id = Column(Integer, primary_key=True, index=True)
-#     employee_id = Column(Integer, ForeignKey("users.id"))
-#     check_in = Column(DateTime, default=datetime.utcnow)
-#     check_out = Column(DateTime, nullable=True)
-#     total_hours = Column(DECIMAL(5,2), nullable=True)
-#     overtime_hours = Column(DECIMAL(5,2), nullable=True)
-#     status = Column(String)
-#     method = Column(String)
-#     recorded_at = Column(DateTime, default=datetime.utcnow)
+# SMS Attendance models
+class Attendance(Base):
+
+    __tablename__ = "attendances"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    date = Column(Date, nullable=False)
+    check_in = Column(Time, nullable=True)
+    check_out = Column(Time, nullable=True)
+    total_hours = Column(DECIMAL(5, 2), nullable=True)
+    overtime_hours = Column(DECIMAL(5, 2), nullable=True)
+    status = Column(String(50))
+
+    user = relationship("User", back_populates="attendances")
 
 
-# class LeaveRecord(Base):
-#     __tablename__ = "leave_records"
-#     id = Column(Integer, primary_key=True, index=True)
-#     employee_id = Column(Integer, ForeignKey("users.id"))
-#     leave_date = Column(DateTime)
-#     leave_type = Column(String)
-#     status = Column(String)
-#     applied_at = Column(DateTime, default=datetime.utcnow)
+class LeaveRecord(Base):
+
+    __tablename__ = "leave_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    leave_type = Column(String(20))
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    status = Column(String(20))
+
+    user = relationship("User", back_populates="leave_records")
