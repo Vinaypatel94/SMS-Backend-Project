@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Table, Date, DateTime, Time, DECIMAL
 from sqlalchemy.orm import relationship
 import datetime
@@ -37,6 +38,7 @@ class User(Base):
 
     roles = relationship(
         "Role", secondary=user_role_association, back_populates="users")
+
     attendances = relationship(
         "Attendance", back_populates="user", cascade="all, delete")
     leave_records = relationship(
@@ -67,6 +69,7 @@ class Permission(Base):
         "Role", secondary=role_permission_association, back_populates="permissions")
 
 
+
 class AttendanceStatus(str, enum.Enum):
     PRESENT = "present"
     ABSENT = "absent"
@@ -80,8 +83,6 @@ class LeaveType(str, enum.Enum):
     UNPAID_LEAVE = "unpaid_leave"
 
 # SMS Attendance models
-
-
 class Attendance(Base):
 
     __tablename__ = "attendances"
@@ -93,7 +94,9 @@ class Attendance(Base):
     check_out = Column(Time, nullable=True)
     total_hours = Column(DECIMAL(5, 2), nullable=True)
     overtime_hours = Column(DECIMAL(5, 2), nullable=True)
+
     status = Column(Enum(AttendanceStatus), nullable=False)
+
 
     user = relationship("User", back_populates="attendances")
 
@@ -108,5 +111,6 @@ class LeaveRecord(Base):
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     status = Column(String(20), nullable=False, default="LEAVE_PENDING")
+
 
     user = relationship("User", back_populates="leave_records")
