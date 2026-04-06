@@ -92,3 +92,5 @@ class LeaveRecordUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: Optional[str] = None
+    
+     

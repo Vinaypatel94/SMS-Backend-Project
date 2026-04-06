@@ -36,7 +36,7 @@ def create_attendance(attendance: AttendanceCreate, db: Session = Depends(get_db
 
 
 @router.get("/attendances/{user_id}", response_model=List[AttendanceResponse], dependencies=[Depends(admin_or_manager_required)])
-def get_user_attendance(user_id: int, db: Session = Depends(get_db)):4
+def get_user_attendance(user_id: int, db: Session = Depends(get_db)):
     try:
         attendances = db.query(Attendance).filter(
             Attendance.user_id == user_id).all()
@@ -110,7 +110,7 @@ def get_user_leaves(user_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(
-            status_code=500, detail=f"erro fatching record{str(e)}")
+            status_code=500, detail=f"error fatching record{str(e)}")
 
 
 

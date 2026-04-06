@@ -1,74 +1,31 @@
-
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Table, Date, DateTime, Time, DECIMAL
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Table, Date, Time, DECIMAL
 from sqlalchemy.orm import relationship
-import datetime
 import enum
 from database import Base
 
 
-# Many-to-Many between Roles and Permissions
+# ==============================
+# Association Tables
+# ==============================
+
 role_permission_association = Table(
     "role_permissions",
     Base.metadata,
-    Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
-    Column("permission_id", Integer, ForeignKey(
-        "permissions.id"), primary_key=True),
+    Column("role_id", Integer, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
+    Column("permission_id", Integer, ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True),
 )
 
-# Many-to-Many between Users and Roles
 user_role_association = Table(
     "user_roles",
     Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
-    Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("role_id", Integer, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
-class User(Base):
-
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    age = Column(Integer, index=True)
-    email = Column(String, unique=True, index=True)
-    phone_no = Column(String, unique=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String, index=True)
-
-    roles = relationship(
-        "Role", secondary=user_role_association, back_populates="users")
-
-    attendances = relationship(
-        "Attendance", back_populates="user", cascade="all, delete")
-    leave_records = relationship(
-        "LeaveRecord", back_populates="user", cascade="all, delete")
-
-
-class Role(Base):
-
-    __tablename__ = "roles"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-
-    users = relationship(
-        "User", secondary=user_role_association, back_populates="roles")
-    permissions = relationship(
-        "Permission", secondary=role_permission_association, back_populates="roles")
-
-
-class Permission(Base):
-
-    __tablename__ = "permissions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-
-    roles = relationship(
-        "Role", secondary=role_permission_association, back_populates="permissions")
-
-
+# ==============================
+# ENUMS
+# ==============================
 
 class AttendanceStatus(str, enum.Enum):
     PRESENT = "present"
@@ -82,35 +39,149 @@ class LeaveType(str, enum.Enum):
     VACATION = "vacation"
     UNPAID_LEAVE = "unpaid_leave"
 
-# SMS Attendance models
+
+class LeaveStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+# ==============================
+# USER TABLE
+# ==============================
+
+class User(Base):
+
+    __tablename__ = "users"
+    __table_args__ = {"mysql_engine": "InnoDB"}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    name = Column(String(100))
+    age = Column(Integer)
+
+    email = Column(String(150), unique=True, index=True)
+    phone_no = Column(String(20), unique=True, index=True)
+    username = Column(String(100), unique=True, index=True)
+
+    hashed_password = Column(String(255), nullable=False)
+
+    roles = relationship(
+        "Role",
+        secondary=user_role_association,
+        back_populates="users"
+    )
+
+    attendances = relationship(
+        "Attendance",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+    leave_records = relationship(
+        "LeaveRecord",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
+
+# ==============================
+# ROLE TABLE
+# ==============================
+
+class Role(Base):
+
+    __tablename__ = "roles"
+    __table_args__ = {"mysql_engine": "InnoDB"}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), unique=True, index=True)
+
+    users = relationship(
+        "User",
+        secondary=user_role_association,
+        back_populates="roles"
+    )
+
+    permissions = relationship(
+        "Permission",
+        secondary=role_permission_association,
+        back_populates="roles"
+    )
+
+
+# ==============================
+# PERMISSION TABLE
+# ==============================
+
+class Permission(Base):
+
+    __tablename__ = "permissions"
+    __table_args__ = {"mysql_engine": "InnoDB"}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), unique=True, index=True)
+
+    roles = relationship(
+        "Role",
+        secondary=role_permission_association,
+        back_populates="permissions"
+    )
+
+
+# ==============================
+# ATTENDANCE TABLE
+# ==============================
+
 class Attendance(Base):
 
     __tablename__ = "attendances"
+    __table_args__ = {"mysql_engine": "InnoDB"}
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
     date = Column(Date, nullable=False)
-    check_in = Column(Time, nullable=True)
-    check_out = Column(Time, nullable=True)
-    total_hours = Column(DECIMAL(5, 2), nullable=True)
-    overtime_hours = Column(DECIMAL(5, 2), nullable=True)
+    check_in = Column(Time)
+    check_out = Column(Time)
 
-    status = Column(Enum(AttendanceStatus), nullable=False)
+    total_hours = Column(DECIMAL(5, 2), default=0)
+    overtime_hours = Column(DECIMAL(5, 2), default=0)
 
+    status = Column(
+        Enum(AttendanceStatus, name="attendance_status"),
+        nullable=False
+    )
 
     user = relationship("User", back_populates="attendances")
 
 
+# ==============================
+# LEAVE RECORD TABLE
+# ==============================
+
 class LeaveRecord(Base):
 
     __tablename__ = "leave_records"
+    __table_args__ = {"mysql_engine": "InnoDB"}
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    leave_type = Column(Enum(LeaveType), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    leave_type = Column(
+        Enum(LeaveType, name="leave_type"),
+        nullable=False
+    )
+
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
-    status = Column(String(20), nullable=False, default="LEAVE_PENDING")
 
+    status = Column(
+        Enum(LeaveStatus, name="leave_status"),
+        default=LeaveStatus.PENDING,
+        nullable=False
+    )
 
     user = relationship("User", back_populates="leave_records")
