@@ -12,7 +12,7 @@ router = APIRouter()
 router = APIRouter(prefix="/api", tags=["attendance"])
 
 
-@router.post("/attendances/", response_model=AttendanceResponse, dependencies=[Depends(admin_or_manager_required)])
+@router.post("/attendance/", response_model=AttendanceResponse, dependencies=[Depends(admin_or_manager_required)])
 def create_attendance(attendance: AttendanceCreate, db: Session = Depends(get_db)):
     try:
         user = db.query(User).filter(User.id == attendance.user_id).first()
@@ -35,7 +35,7 @@ def create_attendance(attendance: AttendanceCreate, db: Session = Depends(get_db
 
 
 
-@router.get("/attendances/{user_id}", response_model=List[AttendanceResponse], dependencies=[Depends(admin_or_manager_required)])
+@router.get("/attendance/{user_id}", response_model=List[AttendanceResponse], dependencies=[Depends(admin_or_manager_required)])
 def get_user_attendance(user_id: int, db: Session = Depends(get_db)):
     try:
         attendances = db.query(Attendance).filter(
@@ -97,7 +97,7 @@ def update_attendance(attendance_id: int, attendance_update: AttendanceUpdate, d
             status_code=500, detail=f"error updating attendance record{str(e)}")
 
 
-@router.get("/leave_records/{user_id}", response_model=List[LeaveRecordResponse], dependencies=[Depends(admin_or_manager_required)])
+@router.get("/leave_record/{user_id}", response_model=List[LeaveRecordResponse], dependencies=[Depends(admin_or_manager_required)])
 def get_user_leaves(user_id: int, db: Session = Depends(get_db)):
     try:
         leaves = db.query(LeaveRecord).filter(
@@ -153,4 +153,3 @@ def delete_leave(leave_id: int, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(
             status_code=500, detail=f" deleting leave record:{str(e)}")
-
