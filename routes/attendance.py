@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 
-from models import Attendance, LeaveRecord, User, Role, user_role_association
+from models import Attendance, LeaveRecord, LeaveStatus, User, Role, user_role_association
 from schemas import AttendanceCreate, LeaveRecordCreate, AttendanceResponse, LeaveRecordResponse, AttendanceUpdate, LeaveRecordUpdate
 from typing import List
 from dependencies import admin_or_manager_required, protected_user
@@ -10,6 +10,14 @@ from dependencies import admin_or_manager_required, protected_user
 router = APIRouter()
 
 router = APIRouter(prefix="/api", tags=["attendance"])
+
+
+def _has_permission(user: User, permission_name: str) -> bool:
+    return any(
+        permission.name == permission_name
+        for role in user.roles
+        for permission in role.permissions
+    )
 
 
 @router.post("/attendance/", response_model=AttendanceResponse, dependencies=[Depends(admin_or_manager_required)])
@@ -114,15 +122,49 @@ def get_user_leaves(user_id: int, db: Session = Depends(get_db)):
 
 
 
-@router.put("/leave_record/{leave_id}", response_model=LeaveRecordResponse, dependencies=[Depends(admin_or_manager_required)])
-def update_leave(leave_id: int, leave_update: LeaveRecordUpdate, db: Session = Depends(get_db)):
+@router.put("/leave_record/{leave_id}", response_model=LeaveRecordResponse)
+def update_leave(
+    leave_id: int,
+    leave_update: LeaveRecordUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(protected_user),
+):
     leave = db.query(LeaveRecord).filter(LeaveRecord.id == leave_id).first()
     if not leave:
         raise HTTPException(status_code=404, detail="leave record not found")
 
     try:
+        is_owner = leave.user_id == current_user.id
+        can_manage_leave = _has_permission(current_user, "update_leave")
+        can_apply_leave = _has_permission(current_user, "create_leave")
+
+        if not can_manage_leave:
+            if not (is_owner and can_apply_leave):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You do not have permission to update this leave record.",
+                )
+            if leave.status != LeaveStatus.PENDING:
+                raise HTTPException(
+                    status_code=400,
+                    detail="You can only update pending leave records.",
+                )
+
+        if leave.status != LeaveStatus.PENDING:
+            raise HTTPException(
+                status_code=400,
+                detail="Only pending leave records can be updated.",
+            )
+
         update_data = leave_update.model_dump(
             exclude_unset=True)  # Use model_dump for Pydantic v2
+
+        if not can_manage_leave and "status" in update_data:
+            raise HTTPException(
+                status_code=403,
+                detail="You cannot change leave status.",
+            )
+
         for key, value in update_data.items():
             setattr(leave, key, value)
 
@@ -130,14 +172,21 @@ def update_leave(leave_id: int, leave_update: LeaveRecordUpdate, db: Session = D
         db.refresh(leave)
         return leave
 
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(
-            status_code=500, detail="Error updating leave record")
+            status_code=500, detail=f"Error updating leave record: {str(e)}")
 
 
-@router.delete("/leave_record/{leave_id}", dependencies=[Depends(admin_or_manager_required)])
-def delete_leave(leave_id: int, db: Session = Depends(get_db)):
+@router.delete("/leave_record/{leave_id}")
+def delete_leave(
+    leave_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(protected_user),
+):
     try:
         leave = db.query(LeaveRecord).filter(
             LeaveRecord.id == leave_id).first()
@@ -145,10 +194,35 @@ def delete_leave(leave_id: int, db: Session = Depends(get_db)):
             raise HTTPException(
                 status_code=404, detail="leave record not found")
 
+        is_owner = leave.user_id == current_user.id
+        can_manage_leave = _has_permission(current_user, "delete_leave")
+        can_apply_leave = _has_permission(current_user, "create_leave")
+
+        if not can_manage_leave:
+            if not (is_owner and can_apply_leave):
+                raise HTTPException(
+                    status_code=403,
+                    detail="You do not have permission to delete this leave record.",
+                )
+            if leave.status != LeaveStatus.PENDING:
+                raise HTTPException(
+                    status_code=400,
+                    detail="You can only delete pending leave records.",
+                )
+
+        if leave.status != LeaveStatus.PENDING:
+            raise HTTPException(
+                status_code=400,
+                detail="Only pending leave records can be deleted.",
+            )
+
         db.delete(leave)
         db.commit()
         return {"message": "leave record deleted successfully"}
 
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(

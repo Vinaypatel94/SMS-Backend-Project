@@ -11,17 +11,40 @@ def create_super_admin():
 
     # Define the roles
     role_permissions_map = {
-        "admin": ["create_user", "update_user", "delete_user", "view_user"],
-        "manager": ["update_user", "view_user"],
-        "hr": ["update_user", "view_user"],
-        "employee": ["view_user"]
+        "admin": [
+            "create_user",
+            "update_user",
+            "delete_user",
+            "view_user",
+            "create_leave",
+            "approve_leave",
+            "reject_leave",
+            "update_leave",
+            "delete_leave",
+        ],
+        "manager": [
+            "update_user",
+            "view_user",
+            "approve_leave",
+            "reject_leave",
+            "update_leave",
+            "delete_leave",
+        ],
+        "hr": [
+            "update_user",
+            "view_user",
+            "create_leave",
+            "approve_leave",
+            "reject_leave",
+            "update_leave",
+            "delete_leave",
+        ],
+        "employee": ["view_user", "create_leave"]
          
          }
 
     # Fetch existing roles
     existing_roles = {role.name for role in db.query(Role).all()}
-    new_roles = [Role(name=role) for role in role_permissions_map.keys() if role not in existing_roles]
-
     new_roles = [Role(name=role) for role in role_permissions_map.keys() if role not in existing_roles]
 
     if new_roles:

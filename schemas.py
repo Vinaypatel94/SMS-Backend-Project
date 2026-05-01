@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import date, time
+from models import LeaveType, LeaveStatus
 
 
 class UserLogin(BaseModel):
@@ -29,7 +30,7 @@ class UserCreate(BaseModel):
     name: str
     age: int
     email: EmailStr
-    phone_no: int
+    phone_no: str
     username: str
     password: str
     role: List[str] = []
@@ -39,7 +40,7 @@ class UserResponse(BaseModel):
     id: int
     name: str
     age: int
-    phone_no: int
+    phone_no: str
     email: str
     username: str
     roles: list[RoleSchema]
@@ -74,23 +75,23 @@ class AttendanceUpdate(BaseModel):
 # create leave schema
 class LeaveRecordCreate(BaseModel):
     user_id: int
-    leave_type: str
+    leave_type: LeaveType
     start_date: date
     end_date: date
-    status: str
+    status: LeaveStatus = LeaveStatus.PENDING
 
 
 class LeaveRecordResponse(LeaveRecordCreate):
     id: int
 
-    class config:
+    class Config:
         from_attributes = True
 
 
 class LeaveRecordUpdate(BaseModel):
-    leave_type: Optional[str] = None
+    leave_type: Optional[LeaveType] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    status: Optional[str] = None
+    status: Optional[LeaveStatus] = None
     
      

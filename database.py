@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
 
-# DATABASE_URL = "sqlite:///./SMS.db" 
-DATABASE_URL = "mysql+pymysql://root:12345@localhost:3306/sms_db"
+# DATABASE_URL = "sqlite:///./SMS.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:12345@localhost:3306/sms_db")
 
 # Set up the database engine
 engine = create_engine(DATABASE_URL)

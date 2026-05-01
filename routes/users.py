@@ -19,25 +19,24 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         access_token = authenticator.create_access_token(
-            data={"sub": db_user.username})
+            data={"sub": db_user.username, "user_id": db_user.id})
         return {"access_token": access_token, "token_type": "bearer"}
-     
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"login error:{str(e)}")
-    
-    finally:
-        db.close()
 
 
 @router.get("/user/{username}", response_model=UserResponse)
 def get_user_by_username(username: str, current_user: User = Depends(protected_user), db: Session = Depends(get_db)):
-    try:  
+    try:
         user = db.query(User).filter(User.username == username).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         return user
-    
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"error fatching  user record{str(e)}")
-    
-    
