@@ -36,6 +36,7 @@ class JWTAuthenticator:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
             username: str = payload.get("sub")
             user_id: int = payload.get("user_id")
+            roles: list = payload.get("roles", [])
 
             if username is None or user_id is None:
                 raise HTTPException(
@@ -43,8 +44,7 @@ class JWTAuthenticator:
                     detail="Invalid authentication credentials",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-            return {"username": username, "user_id": user_id}
-            
+            return {"username": username, "user_id": user_id, "roles": roles}
         except JWTError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
